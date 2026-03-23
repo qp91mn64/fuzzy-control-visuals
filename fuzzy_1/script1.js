@@ -73,15 +73,20 @@ function applyFuzzyRules(location) {
     IF left, THEN right move
     IF middle, THEN stand still
     IF right, THEN left move
+
+    For simplicity,
+    left means [1, 0, 0]
+    middle means [0, 1, 0]
+    right means [0, 0, 1]
     
     velocity = [(-1, left_move), (0, stand_still), (1, right_move)]
     right move:  velocity = [0.0, 0.1, 0.9]
     stand still: velocity = [0.0, 0.9, 0.0]
     left move: velocity = [0.9, 0.1, 0.0]
     
-    Calculating method:
+    Calculating method for each membership of the result fuzzy set of A->B:
         Zadeh: max((1-mu_A(a)), min(mu_A(a), mu_B(b)))
-        Mamdani: min(mu_A(a), mu_B(b)) (used)
+        Mamdani(used here): min(mu_A(a), mu_B(b))
     Where mu_A(a) means the membership of the element a in fuzzy set A;
     a <-> rows, b <-> cols.
 
@@ -96,10 +101,14 @@ function applyFuzzyRules(location) {
     let left_move = [0.9, 0.1, 0];
     let r_move, s_still, l_move, velocity;
     // Input [1, 0, 0], then right move
+    // No value in r_move greater than input[0]
+    // Note that more than one fuzzy rule is used at the same time
     r_move = [Math.min(location[0], right_move[0]), Math.min(location[0], right_move[1]), Math.min(location[0], right_move[2])];
     // Input [0, 1, 0], then stand_still
+    // No value in s_still greater than input[1]
     s_still = [Math.min(location[1], stand_still[0]), Math.min(location[1], stand_still[1]), Math.min(location[1], stand_still[2])];
     // Input [0, 0, 1], then left_move
+    // No value in l_move greater than input[2]
     l_move = [Math.min(location[2], left_move[0]), Math.min(location[2], left_move[1]), Math.min(location[2], left_move[2])];
     // maximum of each output value with the same index from all the fuzzy rules
     velocity = [Math.max(r_move[0], s_still[0], l_move[0]), Math.max(r_move[1], s_still[1], l_move[1]), Math.max(r_move[2], s_still[2], l_move[2])];
