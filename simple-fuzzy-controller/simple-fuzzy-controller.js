@@ -3,6 +3,8 @@
  * Created: 2026-03-26
  * 
  * Source code of the fuzzy controller for my tutorial simple-fuzzy-controller.md (in /docs folder)
+ * You can try Zadeh or Mamdani method to calculate the fuzzy relation of each rule. 
+ * Here the Mamdani method works better.
  */
 function applyFuzzyControl(input) {
     // First, fuzzify the input
@@ -26,7 +28,7 @@ function applyFuzzyRules(fuzzyInput) {
     let stand_still = [0.1, 0.9, 0.1];
     let right = [0, 0.1, 1];
     let left_move = [0.9, 0.1, 0];
-    let method = "Mamdani";  // You can try Mamdani method to calculate R
+    let method = "Zadeh";  // You can try Zadeh or Mamdani method to calculate the fuzzy relation. Here the Mamdani method works better.
     let result1 = applyOneFuzzyRule(fuzzyInput, left, right_move, method);
     let result2 = applyOneFuzzyRule(fuzzyInput, middle, stand_still, method);
     let result3 = applyOneFuzzyRule(fuzzyInput, right, left_move, method);
@@ -98,11 +100,11 @@ function r(x) {
     return membership;
 }
 function applyOneFuzzyRule(fuzzyInput, fuzzyIf, fuzzyThen, method_R) {
-    let R = calculateFuzzyRelationship(fuzzyIf, fuzzyThen, method_R);
+    let R = calculateFuzzyRelation(fuzzyIf, fuzzyThen, method_R);
     let result = fuzzyRelationSynthesis(fuzzyInput, R, fuzzyThen.length);
     return result;
 }
-function calculateFuzzyRelationship(fuzzyIf, fuzzyThen, method) {
+function calculateFuzzyRelation(fuzzyIf, fuzzyThen, method) {
     let R = [];
     for (let i = 0; i < fuzzyIf.length; i++) {
         for (let j = 0; j < fuzzyThen.length; j++) {
