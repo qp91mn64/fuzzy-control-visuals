@@ -412,6 +412,7 @@ function applyFuzzyRules(fuzzyInput) {
             result[i] = result3[i];
         }
     }
+    return result;
 }
 ```
 
