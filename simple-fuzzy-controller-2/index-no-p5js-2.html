@@ -18,6 +18,8 @@ Open the console of browser's dev tool to see the change of x over time
         let dt = 1;  // Time interval for updating the location x
         let v;
         let given = 300;  // The given quantity for the fuzzy controller
+        let config = {};
+        let fuzzyController = new FuzzyController(config);
         console.log(`x 的初始值：${x}`);
         for (let t = 0; t < 100; t += dt) {
             v = fuzzyController.control(x, given);

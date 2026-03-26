@@ -5,11 +5,16 @@
  * Restructure code in simple-fuzzy-controller.js which is for my tutorial simple-fuzzy-controller.md (in /docs folder).
  * You can try Zadeh or Mamdani method to calculate the fuzzy relation of each rule. 
  * Here the Mamdani method works better.
+ * 
+ * I ask DeepSeek how to restructure the code further, it recommends ES6 class, and a config parameter for flexibility.
+ * I also try constructor function, but VSCode seems to recommend ES2015 class.
+ * So I use a class for the source code.
  */
-let fuzzyController = {
-    inputU: [-1, 0, 1],
-    outputU: [-1, 0, 1],
-    membershipFunction: [
+class FuzzyController {
+    constructor(config) {
+    this.inputU = config.inputU || [-1, 0, 1];
+    this.outputU = config.outputU || [-1, 0, 1];
+    this.membershipFunction = config.membershipFunction || [
         // 3 membership functions representating negative, zero, and positive
         function n(x, givenQuantity) {
             let membership;
@@ -47,16 +52,16 @@ let fuzzyController = {
             return membership;
         }
     ],
-    fuzzyRules: [
+    this.fuzzyRules = config.fuzzyRules || [
         [[1, 0.1, 0], [0, 0.1, 0.9]],  // IF negative, THEN increase the value
         [[0.1, 1, 0.1], [0.1, 0.9, 0.1]],  // IF zero, THEN remain the quantity unchanged
         [[0, 0.1, 1], [0.9, 0.1, 0]]  // IF positive, THEN decrease the value
     ],
     // Now "Zadeh" or "Mamdani" method is supported for calculating the fuzzy relation of each rule. 
     // Here the Mamdani method works better.
-    method_FR: "Zadeh",
-    method_FR_all: ["Zadeh", "Mamdani"],
-    control: function(input, givenQuantity) {
+    this.method_FR = config.method_FR || "Mamdani"
+    }
+    control(input, givenQuantity) {
         /*
         Apply fuzzy control to the goal variable
         fuzzyInput: [(-1, n(-1)), (0, z(0)), (1, p(1))]
@@ -68,15 +73,15 @@ let fuzzyController = {
         // Third, defuzzify the fuzzy output
         let output = this.defuzzify(fuzzyOutput);
         return output;
-    },
-    fuzzify: function(input, givenQuantity) {
+    }
+    fuzzify(input, givenQuantity) {
         let fuzzyInput = [];
         for (let i = 0; i < this.membershipFunction.length; i++) {
             fuzzyInput.push(this.membershipFunction[i](input, givenQuantity));
         }
         return fuzzyInput;
-    },
-    applyFuzzyRules: function(fuzzyInput) {
+    }
+    applyFuzzyRules(fuzzyInput) {
         let results = [];
         for (let i = 0; i < this.fuzzyRules.length; i++) {
             results.push(this.applyOneFuzzyRule(fuzzyInput, this.fuzzyRules[i][0], this.fuzzyRules[i][1]));
@@ -94,8 +99,8 @@ let fuzzyController = {
             result.push(myMax);
         }
         return result;
-    },
-    defuzzify: function(fuzzyResult) {
+    }
+    defuzzify(fuzzyResult) {
         let num = 0;
         let den = 0;
         let result;
@@ -111,13 +116,13 @@ let fuzzyController = {
             result = num / den;
         }
         return result;
-    },
-    applyOneFuzzyRule: function(fuzzyInput, fuzzyIf, fuzzyThen, method_R) {
-        let R = this.calculateFuzzyRelation(fuzzyIf, fuzzyThen, method_R);
+    }
+    applyOneFuzzyRule(fuzzyInput, fuzzyIf, fuzzyThen) {
+        let R = this.calculateFuzzyRelation(fuzzyIf, fuzzyThen);
         let result = this.fuzzyRelationSynthesis(fuzzyInput, R, fuzzyThen.length);
         return result;
-    },
-    calculateFuzzyRelation: function(fuzzyIf, fuzzyThen) {
+    }
+    calculateFuzzyRelation(fuzzyIf, fuzzyThen) {
         let R = [];
         for (let i = 0; i < fuzzyIf.length; i++) {
             for (let j = 0; j < fuzzyThen.length; j++) {
@@ -129,8 +134,8 @@ let fuzzyController = {
             }
         }
         return R;
-    },
-    fuzzyRelationSynthesis: function(fuzzyInput, R, R_width) {
+    }
+    fuzzyRelationSynthesis(fuzzyInput, R, R_width) {
         let result = [];
         for (let i = 0; i < R_width; i++) {
             let temp1 = [];
@@ -140,8 +145,8 @@ let fuzzyController = {
             result.push(this.arrayMax(temp1));  // max
         }
         return result;
-    },
-    arrayMax: function(a) {
+    }
+    arrayMax(a) {
         let m = a[0];
         for (let i = 1; i < a.length; i++) {
             if (a[i] > m) {
