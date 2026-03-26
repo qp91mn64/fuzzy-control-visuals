@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<!--
+Author: qp91mn64
+Created: 2026-03-26
+
+The complete source code of my tutorial simple-fuzzy-controller.md (in /docs folder), no p5.js version
+Open the console of browser's dev tool to see the change of x over time
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Fuzzy Controller without p5.js</title>
+    <script src="simple-fuzzy-controller-2.js"></script>
+</head>
+<body>
+    <script>
+        let x = 240;  // Change to see different outputs
+        let dt = 1;  // Time interval for updating the location x
+        let v;
+        let given = 300;  // The given quantity for the fuzzy controller
+        console.log(`x 的初始值：${x}`);
+        for (let t = 0; t < 100; t += dt) {
+            v = fuzzyController.control(x, given);
+            x += v * dt;
+            console.log(`经过时间 ${t} 之后，x 的值：${x}`);
+        }
+    </script>
+</body>
