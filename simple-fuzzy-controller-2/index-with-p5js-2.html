@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<!--
+Author: qp91mn64
+Created: 2026-03-26
+
+Control a circle, also for testing simple-fuzzy-controller-2.js
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Fuzzy Controller with p5.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="simple-fuzzy-controller-2.js"></script>
+</head>
+<body>
+    <script>
+        let x;
+        let v;
+        let dt;  // Time interval for updating the location x
+        let given;
+        let config;
+        let fuzzyController;
+        function setup() {
+            createCanvas(600, 360);  // width: 600
+            x = 240;  // Change to see different outputs
+            v = 0;
+            dt = 1;
+            given = 300;
+            config = {
+                method_FR: "Mamdani"
+            };
+            fuzzyController = new FuzzyController(config);
+        }
+        function draw() {
+            background(204);  // clear the canvas
+            v = fuzzyController.control(x, given);  // control
+            x += v * dt;  // update the location
+            display();  // visualization
+        }
+        function display() {
+            fill((v + 1) * 127.5);  // The color of the circle changes with the change of speed
+            circle(x, 100, 5);
+        }
+    </script>
+</body>

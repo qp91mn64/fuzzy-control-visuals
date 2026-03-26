@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<!--
+Author: qp91mn64
+Created: 2026-03-27
+
+Control the circle following the mouse.
+With the existing fuzzy controller,
+the simplest way to control two patameters
+is to control them separately.
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Fuzzy Controller with p5.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="simple-fuzzy-controller-2.js"></script>
+</head>
+<body>
+    <script>
+        let x, y;
+        let vx, vy;
+        let dt;  // Time interval for updating the location x
+        let config;
+        let fuzzyController;
+        function setup() {
+            createCanvas(600, 360);  // width: 600
+            x = 240;  // Change to see different outputs
+            y = 100;
+            vx = 0;
+            vy = 0;
+            dt = 1;
+            config = {
+                method_FR: "Mamdani",
+                outputU: [-20, 0, 20],
+                fuzzyRules:[
+                    // This configurations almost eliminate the steady-state error
+                    [[1.0, 0.0, 0.0], [0.0, 0.1, 1.0]],  // IF negative, THEN increase the value
+                    [[0.1, 1.0, 0.1], [0.0, 1.0, 0.0]],  // IF zero, THEN remain the quantity unchanged
+                    [[0.0, 0.0, 1.0], [1.0, 0.1, 0.0]]  // IF positive, THEN decrease the value
+                ]
+            };
+            fuzzyController = new FuzzyController(config);
+        }
+        function draw() {
+            background(204);  // clear the canvas
+            vx = fuzzyController.control(x, mouseX);  // control the variable x to follow mouseX
+            vy = fuzzyController.control(y, mouseY);  // control the variable y to follow mouseY
+            x += vx * dt;  // update the location
+            y += vy * dt;
+            display();  // visualization
+        }
+        function display() {
+            fill((Math.abs(vx) + Math.abs(vy)) * 25);  // The color of the circle changes with the change of speed
+            circle(x, y, 35);
+        }
+    </script>
+</body>
