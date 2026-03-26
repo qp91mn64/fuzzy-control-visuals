@@ -2,9 +2,28 @@
  * Author: qp91mn64
  * Created: 2026-03-26
  * 
- * Restructure code in simple-fuzzy-controller.js which is for my tutorial simple-fuzzy-controller.md (in /docs folder).
+ * A simple fuzzy controller, with single input and single output, no dependencies.
+ * Restructure code in simple-fuzzy-controller.js.
  * You can try Zadeh or Mamdani method to calculate the fuzzy relation of each rule. 
  * Here the Mamdani method works better.
+ * 
+ * Usage: 
+ *   - Create a new FuzzyController:
+ *     let fuzzyController = new FuzzyController(config);
+ *   In which `config` is an object to pass in your own parameters other than the default
+ *   an empty object {} is accepted with default values.
+ *   
+ *   - fastest way to apply the controller:
+ *     let output = fuzzyController.control(input, givenQuantity);
+ *   In which `givenQuantity` must be set manually.
+ *   You can use the fuzzy controller to follow a value changing from time.
+ *   
+ *   - Configurable parameters:
+ *     - inputU: An array of the domain of input
+ *     - outputU: An array of the domain of fuzzy output, relating to how much the controller can output
+ *     - membershipFunctions: an array with each valut a function calculating membership of input and givenQuantity
+ *     - fuzzyRules: A 3d array defining all fuzzy rules, each fuzzy rule consisting of a IF part and a THEN part
+ *     - method_FR: The method used for calculating fuzzy relation of each rule, now support `Zadeh` or Mamdani` method
  * 
  * I ask DeepSeek how to restructure the code further, it recommends ES6 class, and a config parameter for flexibility.
  * I also try constructor function, but VSCode seems to recommend ES2015 class.
@@ -57,7 +76,6 @@ class FuzzyController {
             [[0.1, 1, 0.1], [0.1, 0.9, 0.1]],  // IF zero, THEN remain the quantity unchanged
             [[0, 0.1, 1], [0.9, 0.1, 0]]  // IF positive, THEN decrease the value
         ],
-        // Now "Zadeh" or "Mamdani" method is supported for calculating the fuzzy relation of each rule. 
         // Here the Mamdani method works better.
         this.method_FR = config.method_FR || "Mamdani"
         this.fuzzyRelations = [];
@@ -83,8 +101,12 @@ class FuzzyController {
     }
     control(input, givenQuantity) {
         /*
-        Apply fuzzy control to the goal variable
-        fuzzyInput: [(-1, n(-1)), (0, z(0)), (1, p(1))]
+        The fastest way to apply the fuzzy controller.
+        Parameters
+          - input: Number, which is outside of the controller.
+          - givenQuantity: Number, used for the controller as a goal, must be set manually.
+        Returns
+          - output: Number
         */
         // First, fuzzify the input
         let fuzzyInput = this.fuzzify(input, givenQuantity);
