@@ -127,8 +127,8 @@ let fuzzyController = {
                     R.push(Math.min(fuzzyIf[i], fuzzyThen[j]));  // Calculate the grade of membership
                 }
             }
-        return R;
         }
+        return R;
     },
     fuzzyRelationSynthesis: function(fuzzyInput, R, R_width) {
         let result = [];
