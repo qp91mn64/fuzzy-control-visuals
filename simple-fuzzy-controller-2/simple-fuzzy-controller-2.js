@@ -12,54 +12,74 @@
  */
 class FuzzyController {
     constructor(config) {
-    this.inputU = config.inputU || [-1, 0, 1];
-    this.outputU = config.outputU || [-1, 0, 1];
-    this.membershipFunction = config.membershipFunction || [
-        // 3 membership functions representating negative, zero, and positive
-        function n(x, givenQuantity) {
-            let membership;
-            if (x <= givenQuantity - 200) {
-                membership = 1;
-            } else if (x > givenQuantity - 200 && x <= givenQuantity) {
-                membership = (givenQuantity - x) / 200;
-            } else {
-                membership = 0;
+        this.inputU = config.inputU || [-1, 0, 1];
+        this.outputU = config.outputU || [-1, 0, 1];
+        this.membershipFunction = config.membershipFunction || [
+            // 3 membership functions representating negative, zero, and positive
+            function n(x, givenQuantity) {
+                let membership;
+                if (x <= givenQuantity - 200) {
+                    membership = 1;
+                } else if (x > givenQuantity - 200 && x <= givenQuantity) {
+                    membership = (givenQuantity - x) / 200;
+                } else {
+                    membership = 0;
+                }
+                return membership;
+            },
+            function z(x, givenQuantity) {
+                let membership;
+                if (x <= givenQuantity - 200) {
+                    membership = 0;
+                } else if (x > givenQuantity - 200 && x <= givenQuantity) {
+                    membership = (x - givenQuantity + 200) / 200;
+                } else if (x > givenQuantity && x <= givenQuantity + 200) {
+                    membership = (givenQuantity + 200 - x) / 200;
+                } else {
+                    membership = 0;
+                }
+                return membership;
+            },
+            function p(x, givenQuantity) {
+                let membership;
+                if (x <= givenQuantity) {
+                    membership = 0;
+                } else if (x > givenQuantity && x <= givenQuantity + 200) {
+                    membership = (x - givenQuantity) / 200;
+                } else {
+                    membership = 1;
+                }
+                return membership;
             }
-            return membership;
-        },
-        function z(x, givenQuantity) {
-            let membership;
-            if (x <= givenQuantity - 200) {
-                membership = 0;
-            } else if (x > givenQuantity - 200 && x <= givenQuantity) {
-                membership = (x - givenQuantity + 200) / 200;
-            } else if (x > givenQuantity && x <= givenQuantity + 200) {
-                membership = (givenQuantity + 200 - x) / 200;
-            } else {
-                membership = 0;
+        ],
+        this.fuzzyRules = config.fuzzyRules || [
+            [[1, 0.1, 0], [0, 0.1, 0.9]],  // IF negative, THEN increase the value
+            [[0.1, 1, 0.1], [0.1, 0.9, 0.1]],  // IF zero, THEN remain the quantity unchanged
+            [[0, 0.1, 1], [0.9, 0.1, 0]]  // IF positive, THEN decrease the value
+        ],
+        // Now "Zadeh" or "Mamdani" method is supported for calculating the fuzzy relation of each rule. 
+        // Here the Mamdani method works better.
+        this.method_FR = config.method_FR || "Mamdani"
+        this.fuzzyRelations = [];
+        // Calculate the fuzzy relations first
+        this.calculateRs();
+    }
+    calculateRs() {
+        for (let i = 0; i < this.fuzzyRules.length; i++) {
+            let R = [];
+            let fuzzyIf = this.fuzzyRules[i][0];
+            let fuzzyThen = this.fuzzyRules[i][1];
+            for (let j = 0; j < fuzzyIf.length; j++) {
+                for (let k = 0; k < fuzzyThen.length; k++) {
+                    if (this.method_FR == "Zadeh") {
+                        R.push(Math.max(Math.min(fuzzyIf[j], fuzzyThen[k]), (1 - fuzzyIf[j])));  // Calculate the grade of membership
+                    } else {  // Mamdani method is default as it works better.
+                        R.push(Math.min(fuzzyIf[j], fuzzyThen[k]));  // Calculate the grade of membership
+                    }
+                }
             }
-            return membership;
-        },
-        function p(x, givenQuantity) {
-            let membership;
-            if (x <= givenQuantity) {
-                membership = 0;
-            } else if (x > givenQuantity && x <= givenQuantity + 200) {
-                membership = (x - givenQuantity) / 200;
-            } else {
-                membership = 1;
-            }
-            return membership;
+            this.fuzzyRelations.push(R);
         }
-    ],
-    this.fuzzyRules = config.fuzzyRules || [
-        [[1, 0.1, 0], [0, 0.1, 0.9]],  // IF negative, THEN increase the value
-        [[0.1, 1, 0.1], [0.1, 0.9, 0.1]],  // IF zero, THEN remain the quantity unchanged
-        [[0, 0.1, 1], [0.9, 0.1, 0]]  // IF positive, THEN decrease the value
-    ],
-    // Now "Zadeh" or "Mamdani" method is supported for calculating the fuzzy relation of each rule. 
-    // Here the Mamdani method works better.
-    this.method_FR = config.method_FR || "Mamdani"
     }
     control(input, givenQuantity) {
         /*
@@ -84,7 +104,7 @@ class FuzzyController {
     applyFuzzyRules(fuzzyInput) {
         let results = [];
         for (let i = 0; i < this.fuzzyRules.length; i++) {
-            results.push(this.applyOneFuzzyRule(fuzzyInput, this.fuzzyRules[i][0], this.fuzzyRules[i][1]));
+            results.push(this.applyOneFuzzyRule(fuzzyInput, i));
         }
         let result = [];
         // calculate max value of each element
@@ -117,25 +137,9 @@ class FuzzyController {
         }
         return result;
     }
-    applyOneFuzzyRule(fuzzyInput, fuzzyIf, fuzzyThen) {
-        let R = this.calculateFuzzyRelation(fuzzyIf, fuzzyThen);
-        let result = this.fuzzyRelationSynthesis(fuzzyInput, R, fuzzyThen.length);
-        return result;
-    }
-    calculateFuzzyRelation(fuzzyIf, fuzzyThen) {
-        let R = [];
-        for (let i = 0; i < fuzzyIf.length; i++) {
-            for (let j = 0; j < fuzzyThen.length; j++) {
-                if (this.method_FR == "Zadeh") {
-                    R.push(Math.max(Math.min(fuzzyIf[i], fuzzyThen[j]), (1 - fuzzyIf[i])));  // Calculate the grade of membership
-                } else {  // Mamdani method is default as it works better.
-                    R.push(Math.min(fuzzyIf[i], fuzzyThen[j]));  // Calculate the grade of membership
-                }
-            }
-        }
-        return R;
-    }
-    fuzzyRelationSynthesis(fuzzyInput, R, R_width) {
+    applyOneFuzzyRule(fuzzyInput, fuzzyRuleIndex) {
+        let R = this.fuzzyRelations[fuzzyRuleIndex];
+        let R_width = this.fuzzyRules[fuzzyRuleIndex][1].length;
         let result = [];
         for (let i = 0; i < R_width; i++) {
             let temp1 = [];
