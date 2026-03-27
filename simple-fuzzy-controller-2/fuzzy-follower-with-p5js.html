@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<!--
+Author: qp91mn64
+Created: 2026-03-27
+
+Control multiple circles with the same fuzzy controller.
+The first circle follows the mouse, with all the other circles follow one by one.
+
+Here the limitation (feature?) emerges:
+  1. The following circles starts with a delay and stops quicker, and the last ones not move sometimes.
+      Maybe a set of steeper membership functions mitigates this.
+  2. When the circles stop, they tend to form diagnoals other than curves.
+      Maybe a fuzzy controller with at least 2 inputs or 2 outputs
+      or use the distance as input can solve this.
+-->
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Fuzzy Follower with p5.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="simple-fuzzy-controller-2.js"></script>
+</head>
+<body>
+    <script>
+        let x = [];
+        let y = [];
+        let vx = [];
+        let vy = [];
+        let circleCount = 30;
+        let dt;  // Time interval for updating the location x
+        let config;
+        let fuzzyController;
+        let given;
+        function setup() {
+            createCanvas(600, 360);  // width: 600
+            for (let i = 0; i < circleCount; i++) {
+                x.push(Math.random() * width);  // Change to see different output
+                vx.push(0);
+                y.push(Math.random() * height);
+                vy.push(0);
+            }
+            dt = 1;
+            config = {
+                method_FR: "Mamdani",
+                outputU: [-25, 0, 25],
+                fuzzyRules: [
+                    // The steady state error is used to form snakelike shape.
+                    [[1.0, 0.05, 0.0], [0.0, 0.05, 1.0]],  // IF negative, THEN increase the value
+                    [[0.1, 1.0, 0.1], [0.05, 1.0, 0.05]],  // IF zero, THEN remain the value unchanged
+                    [[0.0, 0.05, 1.0], [1.0, 0.05, 0.0]]  // IF positive, THEN decrease the value
+                ]
+            };
+            fuzzyController = new FuzzyController(config);
+            given = 300;
+        }
+        function draw() {
+            background(204);  // clear the canvas
+            // the first circle follows the mouse
+            vx[0] = fuzzyController.control(x[0], mouseX);
+            x[0] += vx[0] * dt;  // update the location
+            vy[0] = fuzzyController.control(y[0], mouseY);
+            y[0] += vy[0] * dt;  // update the location
+            // control all the other circle to follow the previous one
+            for (let i = 1; i < circleCount; i++) {
+                vx[i] = fuzzyController.control(x[i], x[i-1]);
+                x[i] += vx[i] * dt;  // update the location
+                vy[i] = fuzzyController.control(y[i], y[i-1]);
+                y[i] += vy[i] * dt;  // update the location
+            }
+            display();  // visualization
+        }
+        function display() {
+            for (let i = 0; i < circleCount; i++) {
+                fill((vx[i] + vy[i] + 1) * 127.5);  // The color of the circle changes with the change of speed
+                circle(x[i], y[i], 10);
+            }
+        }
+    </script>
+</body>

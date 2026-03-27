@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<!--
+Author: qp91mn64
+Created: 2026-03-27
+
+Modified from fuzzy-follower-with-p5js.html
+
+Control multiple circles with the same fuzzy controller.
+The first circle follows the mouse, with all the other circles follow one by one.
+Use distance as input and the output is treated as the magnitude of the velocity vector,
+the circles form a curve instead of diagonals now.
+
+Here the limitation, or feature of the visuals exists:
+  The following circles starts with a delay and moves less, and the last ones not move sometimes.
+-->
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Fuzzy Follower with p5.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="simple-fuzzy-controller-2.js"></script>
+</head>
+<body>
+    <script>
+        let x = [];
+        let y = [];
+        let vx = [];
+        let vy = [];
+        let circleCount = 30;
+        let dt;  // Time interval for updating the location x
+        let config;
+        let fuzzyController;
+        let given;
+        function setup() {
+            createCanvas(600, 360);  // width: 600
+            for (let i = 0; i < circleCount; i++) {
+                x.push(Math.random() * width);  // Change to see different output
+                vx.push(0);
+                y.push(Math.random() * height);
+                vy.push(0);
+            }
+            dt = 1;
+            config = {
+                method_FR: "Mamdani",
+                outputU: [-5, 0, 5],
+                fuzzyRules: [
+                    // The steady state error is used to form snakelike shape.
+                    [[1.0, 0.2, 0.0], [0.0, 0.1, 1.0]],  // IF negative, THEN increase the value
+                    [[0.05, 1.0, 0.05], [0.05, 1.0, 0.05]],  // IF zero, THEN remain the value unchanged
+                    [[0.0, 0.2, 1.0], [1.0, 0.1, 0.0]]  // IF positive, THEN decrease the value
+                ]
+            };
+            fuzzyController = new FuzzyController(config);
+            given = 300;
+        }
+        function draw() {
+            background(204);  // clear the canvas
+            // Here I try to update all the circles' locations at the same time instead of one by one,
+            // however the delay of each circle exists.
+            let xTemp = x.slice();
+            let yTemp = y.slice();
+            // the first circle follows the mouse
+            let dx = x[0] - mouseX;
+            let dy = y[0] - mouseY;
+            let d = Math.sqrt(dx * dx + dy * dy);
+            // a hack, use the error as input, thus given value is zero.
+            // maybe the nature of control is to make the error follow zero.
+            // another hack is to amplify the input with multiplication first (can be seen as a preamplifier),
+            // so that there is no need to switch to a set of steeper membership function.
+            let v0 = fuzzyController.control(d * 5, 0);
+            // update towards the location to follow
+            vx[0] = v0 * (dx / d);
+            xTemp[0] += vx[0] * dt;
+            vy[0] = v0 * (dy / d);
+            yTemp[0] += vy[0] * dt;
+            // control all the other circle to follow the previous one
+            for (let i = 1; i < circleCount; i++) {
+                dx = x[i] - x[i-1];
+                dy = y[i] - y[i-1];
+                d = Math.sqrt(dx * dx + dy * dy);
+                // a hack, use the error as input, thus given value is zero.
+                // maybe the nature of control is to make the error follow zero.
+                // another hack is to amplify the input with multiplication first (can be seen as a preamplifier),
+                // so that there is no need to switch to a set of steeper membership function.
+                v0 = fuzzyController.control(d * 5, 0);
+                // update towards the location to follow
+                vx[i] = v0 * (dx / d);
+                xTemp[i] += vx[i] * dt;
+                vy[i] = v0 * (dy / d);
+                yTemp[i] += vy[i] * dt;
+            }
+            x = xTemp.slice();
+            y = yTemp.slice();
+            display();  // visualization
+        }
+        function display() {
+            for (let i = 0; i < circleCount; i++) {
+                fill((vx[i] + vy[i] + 1) * 127.5);  // The color of the circle changes with the change of speed
+                circle(x[i], y[i], 10);
+            }
+        }
+    </script>
+</body>
