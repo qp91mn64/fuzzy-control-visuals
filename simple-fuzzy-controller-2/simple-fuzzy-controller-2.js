@@ -35,7 +35,7 @@ class FuzzyController {
         this.inputU = config.inputU || [-200, 0, 200];
         // Output universe of discourse, used by defuzzification
         this.outputU = config.outputU || [-1, 0, 1];
-        this.membershipFunction = config.membershipFunction || [
+        this.membershipFunctions = config.membershipFunctions || [
             // 3 membership functions representating negative, zero, and positive
             // DeepSeek suggests arrow functions to enable these functions use this.inputU
             (x, givenQuantity) => {
@@ -121,8 +121,8 @@ class FuzzyController {
     }
     fuzzify(input, givenQuantity) {
         let fuzzyInput = [];
-        for (let i = 0; i < this.membershipFunction.length; i++) {
-            fuzzyInput.push(this.membershipFunction[i](input, givenQuantity));
+        for (let i = 0; i < this.membershipFunctions.length; i++) {
+            fuzzyInput.push(this.membershipFunctions[i](input, givenQuantity));
         }
         return fuzzyInput;
     }
