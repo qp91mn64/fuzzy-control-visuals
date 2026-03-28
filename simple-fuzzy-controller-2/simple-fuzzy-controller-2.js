@@ -31,40 +31,43 @@
  */
 class FuzzyController {
     constructor(config) {
-        this.inputU = config.inputU || [-1, 0, 1];
+        // Input universe of discourse, used by membership functions
+        this.inputU = config.inputU || [-200, 0, 200];
+        // Output universe of discourse, used by defuzzification
         this.outputU = config.outputU || [-1, 0, 1];
         this.membershipFunction = config.membershipFunction || [
             // 3 membership functions representating negative, zero, and positive
-            function n(x, givenQuantity) {
+            // DeepSeek suggests arrow functions to enable these functions use this.inputU
+            (x, givenQuantity) => {
                 let membership;
-                if (x <= givenQuantity - 200) {
+                if (x <= givenQuantity + this.inputU[0]) {
                     membership = 1;
-                } else if (x > givenQuantity - 200 && x <= givenQuantity) {
-                    membership = (givenQuantity - x) / 200;
+                } else if (x > givenQuantity + this.inputU[0] && x <= givenQuantity) {
+                    membership = (givenQuantity - x) / (this.inputU[1] - this.inputU[0]);
                 } else {
                     membership = 0;
                 }
                 return membership;
             },
-            function z(x, givenQuantity) {
+            (x, givenQuantity) => {
                 let membership;
-                if (x <= givenQuantity - 200) {
+                if (x <= givenQuantity + this.inputU[0]) {
                     membership = 0;
-                } else if (x > givenQuantity - 200 && x <= givenQuantity) {
-                    membership = (x - givenQuantity + 200) / 200;
-                } else if (x > givenQuantity && x <= givenQuantity + 200) {
-                    membership = (givenQuantity + 200 - x) / 200;
+                } else if (x > givenQuantity + this.inputU[0] && x <= givenQuantity) {
+                    membership = (x - givenQuantity - this.inputU[0]) / (this.inputU[1] - this.inputU[0]);
+                } else if (x > givenQuantity && x <= givenQuantity + this.inputU[2]) {
+                    membership = (givenQuantity + this.inputU[2] - x) / (this.inputU[2] - this.inputU[1]);
                 } else {
                     membership = 0;
                 }
                 return membership;
             },
-            function p(x, givenQuantity) {
+            (x, givenQuantity) => {
                 let membership;
                 if (x <= givenQuantity) {
                     membership = 0;
-                } else if (x > givenQuantity && x <= givenQuantity + 200) {
-                    membership = (x - givenQuantity) / 200;
+                } else if (x > givenQuantity && x <= givenQuantity + this.inputU[2]) {
+                    membership = (x - givenQuantity) / (this.inputU[2] - this.inputU[1]);
                 } else {
                     membership = 1;
                 }
