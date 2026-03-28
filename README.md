@@ -44,7 +44,7 @@ Choose a HTML file with the name including `with-p5js` and open with your browse
 
 Or see `simple-fuzzy-controller.md` if you are unfamiliar with fuzzy control.
 
-Math or technical details are less important here.
+Math or technical details is not cared about too much.
 
 ## If you want to use the fuzzy controller
 
@@ -61,7 +61,7 @@ Then you can call the methods provided from this file, for example:
 ```JavaScript
 let input = ...;
 let given = ...;
-let config = {method_FR = "Mamdani"};  // Use Mamdani method to calculate fuzzy relation of each rule
+let config = {method_FR: "Mamdani"};  // Use minimum to calculate fuzzy relations of each rule
 let fuzzyController = new FuzzyController(config);
 let output = fuzzyController.control(input, given);
 ```
@@ -70,18 +70,18 @@ or
 
 ```JavaScript
 let error = ...;  // input - given
-let config = {method_FR = "Mamdani"};  // Use Mamdani method to calculate fuzzy relation of each rule
+let config = {method_FR: "Mamdani"};  // Use minimum to calculate fuzzy relations of each rule
 let fuzzyController = new FuzzyController(config);
 let output = fuzzyController.control(error, 0);
 ```
 
 Where:
 - `config` is a simple JS object to pass in your own parameters for controlling, so that you can implement your own controller in without changing the source code. `{}` means use all parameters as default. Main parameters supported:
-  - method_FR: `Zadeh` or `Mamdani`, the latter is default.
-  - fuzzyRules: a 3d array, with each value a fuzzy rule. Each rule consists of a IF part and a THEN part.
-  - outputU: An array defines the amount of output. `[-1, 0, 1]` is default.
-  - membershipFunction: an array, with each value a function calculating the membership (between 0 and 1) of the input.
-- `given` can be set to what you like, even `mouseX` or location of a moving object works, as long as it is a `Number` in JS and not too great or small;
+  - method_FR: `Zadeh` (`max(min(IF[i], THEN[j]), (1 - IF[i]))`) or `Mamdani` (`min(IF[i], THEN[j])`), the latter is default.
+  - fuzzyRules: a 3d array, with each value a fuzzy rule. The first part of a fuzzy rule means IF and second part means THEN, with each part containing 3 values between 0 and 1. An example of a fuzzy rule is `[[1, 0.1, 0], [0, 0.1, 0.9]]`.
+  - inputU: An array representing linguistic negative, zero, positive respcetively for input. Now `[-200, 0, 200]` is default.
+  - outputU: An array representing linguistic negative, zero, positive respcetively for output. `[-1, 0, 1]` is default.
+- `given` can be set to what you like, even `mouseX` or location of a moving object works, as long as it is a `Number` in JS; too great or low values are treated the same as boundaries.
 - `output` is an amount calculated by the controller to make the `input` follow `given` or `error` follow 0 a bit nearer.
 
 For more details please read the source code.
