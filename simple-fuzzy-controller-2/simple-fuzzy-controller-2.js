@@ -3,25 +3,25 @@
  * Created: 2026-03-26
  * 
  * A simple fuzzy controller, with single input and single output, no dependencies.
- * Restructure code in simple-fuzzy-controller.js.
+ * Restructure code from simple-fuzzy-controller.js.
+ * And the main usage now is for p5.js sketches, drawing graphics.
  * You can try Zadeh or Mamdani method to calculate the fuzzy relation of each rule. 
  * Here the Mamdani method works better.
  * 
  * Usage: 
  *   - Create a new FuzzyController:
  *     let fuzzyController = new FuzzyController(config);
- *   In which `config` is an object to pass in your own parameters other than the default
+ *   Where `config` is an object to pass in your own parameters other than the default
  *   an empty object {} is accepted with default values.
  *   
  *   - fastest way to apply the controller:
  *     let output = fuzzyController.control(input, givenQuantity);
- *   In which `givenQuantity` must be set manually.
+ *   Where `givenQuantity` must be set manually.
  *   You can use the fuzzy controller to follow a value changing from time.
  *   
- *   - Configurable parameters:
- *     - inputU: An array of the domain of input
- *     - outputU: An array of the domain of fuzzy output, relating to how much the controller can output
- *     - membershipFunctions: an array with each valut a function calculating membership of input and givenQuantity
+ *   - Main configurable parameters:
+ *     - inputU: An array of the input universe
+ *     - outputU: An array of the output universe, relating to how much the controller can output
  *     - fuzzyRules: A 3d array defining all fuzzy rules, each fuzzy rule consisting of a IF part and a THEN part
  *     - method_FR: The method used for calculating fuzzy relation of each rule, now support `Zadeh` or Mamdani` method
  * 
@@ -31,13 +31,32 @@
  */
 class FuzzyController {
     constructor(config) {
-        // Input universe of discourse, used by membership functions
+        // Input universe of discourse, each value is maximum point of corresponding membership function.
         this.inputU = config.inputU || [-200, 0, 200];
-        // Output universe of discourse, used by defuzzification
+        // Output universe of discourse, represents negative, zero, positive, for defuzzification.
         this.outputU = config.outputU || [-1, 0, 1];
+        /*
+        3 membership functions respectively representing negative, zero, and positive, like this:
+   
+        mu    N      Z      P
+        1 ------.    .    .------- 
+                 \  / \  /
+                  \/   \/ 
+                  /\   /\
+                 /  \ /  \
+        0 ------.----.----.------- error = input - givenQuantity
+                |    |    |
+          inputU[0]  |  inputU[2]
+                 inputU[1] (0 default)
+        
+        N (Negative): trapezoidal, with flat top from -inf to inputU[0]
+        Z (Zero): triangular, the top point is inputU[1] (0 defalut)
+        P (Positive): trapezoidal, with flat top from inputU[2] to inf
+
+        Besides, for each value of error, the sum of all memberships equals 1.
+        */
         this.membershipFunctions = config.membershipFunctions || [
-            // 3 membership functions representating negative, zero, and positive
-            // DeepSeek suggests arrow functions to enable these functions use this.inputU
+            // DeepSeek suggests arrow functions for enabling these functions to use this.inputU.
             (x, givenQuantity) => {
                 let membership;
                 if (x <= givenQuantity + this.inputU[0]) {
@@ -74,15 +93,21 @@ class FuzzyController {
                 return membership;
             }
         ],
+        // Fuzzy rules
+        // Each fuzzy rule contains two parts:
+        // - IF part, an array of length 3, as 3 membership functions in total
+        // - Then part, an array of length 3, same as the length of array outputU
+        // Each value of both IF part and Then part is in the interval [0, 1].
         this.fuzzyRules = config.fuzzyRules || [
             [[1, 0.1, 0], [0, 0.1, 0.9]],  // IF negative, THEN increase the value
             [[0.1, 1, 0.1], [0.1, 0.9, 0.1]],  // IF zero, THEN remain the quantity unchanged
             [[0, 0.1, 1], [0.9, 0.1, 0]]  // IF positive, THEN decrease the value
         ],
-        // Here the Mamdani method works better.
+        // Method calculating fuzzy relation of each rule.
+        // Supported now: "Zadeh", "Mamdani", the latter works better.
         this.method_FR = config.method_FR || "Mamdani"
+        // Calculate the fuzzy relations first.
         this.fuzzyRelations = [];
-        // Calculate the fuzzy relations first
         this.calculateRs();
     }
     calculateRs() {
@@ -111,15 +136,16 @@ class FuzzyController {
         Returns
           - output: Number
         */
-        // First, fuzzify the input
+        // First, fuzzify the input.
         let fuzzyInput = this.fuzzify(input, givenQuantity);
-        // Second, apply all fuzzy rules available
+        // Second, apply all fuzzy rules available.
         let fuzzyOutput = this.applyFuzzyRules(fuzzyInput);
-        // Third, defuzzify the fuzzy output
+        // Third, defuzzify the fuzzy output.
         let output = this.defuzzify(fuzzyOutput);
         return output;
     }
     fuzzify(input, givenQuantity) {
+        // Fuzzify the input by calculating the membership of the error to N, Z, P.
         let fuzzyInput = [];
         for (let i = 0; i < this.membershipFunctions.length; i++) {
             fuzzyInput.push(this.membershipFunctions[i](input, givenQuantity));
@@ -127,12 +153,13 @@ class FuzzyController {
         return fuzzyInput;
     }
     applyFuzzyRules(fuzzyInput) {
+        // Apply all fuzzy rules available to calculate the fuzzy output.
         let results = [];
         for (let i = 0; i < this.fuzzyRules.length; i++) {
             results.push(this.applyOneFuzzyRule(fuzzyInput, i));
         }
         let result = [];
-        // calculate max value of each element
+        // Calculate max value from each rule.
         for (let i = 0; i < results[0].length; i++) {
             let myMax = results[0][i];
             for (let j = 1; j < results.length; j++) {
@@ -146,6 +173,8 @@ class FuzzyController {
         return result;
     }
     defuzzify(fuzzyResult) {
+        // Defuzzify the fuzzy output using centroid method.
+        // If each value of fuzzyResult is 0, 0 is returned.
         let num = 0;
         let den = 0;
         let result;
@@ -163,7 +192,9 @@ class FuzzyController {
         return result;
     }
     applyOneFuzzyRule(fuzzyInput, fuzzyRuleIndex) {
-        let R = this.fuzzyRelations[fuzzyRuleIndex];
+        // Calculate output of one fuzzy rule with fuzzy relation synthesis.
+        // Max-min composition is used.
+        let R = this.fuzzyRelations[fuzzyRuleIndex];  // Use pre-calculated fuzzy relation
         let R_width = this.fuzzyRules[fuzzyRuleIndex][1].length;
         let result = [];
         for (let i = 0; i < R_width; i++) {
