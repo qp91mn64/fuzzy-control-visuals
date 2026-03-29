@@ -15,28 +15,43 @@ And the question: What if fuzzy control is introduced in p5.js sketches? Can it 
 ```
 fuzzy-control-visuals/
   ├── docs/
-  │    └── simple-fuzzy-controller.md        # a simple tutorial on fuzzy control
-  ├── simple-fuzzy-controller/             # complete source code of my tutorial
-  │    ├── index-no-p5js.html
-  │    ├── index-with-p5js.html
-  │    └── simple-fuzzy-controller.js        # implementation of fuzzy controller
+  │    └── simple-fuzzy-controller.md                # a simple tutorial on fuzzy control
+  ├── fuzzy_1/                                     # an experimental sketch
+  │    ├── index.html
+  │    └── script1.js
+  ├── fuzzy_2/                                     # also an experimental sketch
+  │    ├── index.html
+  │    └── script1.js
   ├── simple-fuzzy-controller-2/
-  │    ├── index-no-p5js-2.html              # testing
-  │    ├── index-with-p5js-2.html            # sketches with p5.js to draw graphics
+  │    ├── particle-blurred/                               # new!
+  │    │    ├── particle-blurred-with-p5js-1.html            # similar sketches
+  │    │    ├── particle-blurred-with-p5js-2.html
+  │    │    ├── particle-blurred-with-p5js-3.html
+  │    │    ├── particle-blurred-with-p5js-4.html
+  │    │    └── particle-blurred-with-p5js-5.html
+  │    ├── particle-convergence/                           # new!
+  │    │    ├── particle-convergence-with-p5js-1.html
+  │    │    ├── particle-convergence-with-p5js-1a.html
+  │    │    ├── particle-convergence-with-p5js-2.html
+  │    │    └── particle-convergence-with-p5js-2a.html
+  │    ├── fuzzy-follower-with-p5js-2.html
+  │    ├── fuzzy-follower-with-p5js.html
+  │    ├── index-no-p5js-2.html                              # testing
+  │    ├── index-with-p5js-2.html                    # sketches with p5.js to draw graphics
   │    ├── index-with-p5js-2a.html
   │    ├── index-with-p5js-2b.html
-  │    ├── fuzzy-follower-with-p5js.html
-  │    ├── fuzzy-follower-with-p5js-2.html
-  │    └── simple-fuzzy-controller-2.js      # implementation of fuzzy controller
-  ├── fuzzy_1/                             # an experimental sketch
-  │    ├── index.html
-  │    └── script1.js
-  ├── fuzzy_2/                             # also an experimental sketch
-  │    ├── index.html
-  │    └── script1.js
+  │    └── simple-fuzzy-controller-2.js              # implementation of fuzzy controller
+  ├── simple-fuzzy-controller/                     # complete source code of my tutorial
+  │    ├── index-no-p5js.html
+  │    ├── index-with-p5js.html
+  │    └── simple-fuzzy-controller.js                # implementation of fuzzy controller
   ├── LICENSE
   └── README.md
 ```
+
+Newest: sketches inside `particle-blurred/` and `particle-convergence/` folder, which are inside `simple-fuzzy-controller-2/` folder. They draw colorful graphics instead of grayscale shapes as older sketches draw, and use fuzzy controller defined in `simple-fuzzy-controller-2.js`.
+
+Sketches inside `particle-blurred/` draw similar visuals as I have not implemented anything like these before.
 
 ## Quick start
 
