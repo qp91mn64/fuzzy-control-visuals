@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<!--
+Author: qp91mn64
+License: MIT License
+Created: 2026-03-30
+
+Modified from index-no-p5js-2.html
+
+Open the console of browser's dev tool to see the change of x over time
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Fuzzy Controller without p5.js</title>
+    <script src="simple-fuzzy-controller-3.js"></script>
+</head>
+<body>
+    <script>
+        let x1 = 240;  // Change to see different outputs
+        let x2 = 404;
+        let x3 = 100;
+        let dt = 1;  // Time interval for updating the location x
+        let v1, v2, v3;
+        let given = 300;  // The given quantity for the fuzzy controller
+        let config = {};
+        let fuzzyController = new FuzzyController(config);
+        config = {
+            inputU: [-100, -50, 0, 50, 100],
+            outputU: [-2, -1, 0, 1, 2],
+            fuzzyRules: [
+                [[1.0, 0.7, 0.1, 0.0, 0.0], [0.0, 0.0, 0.1, 0.5, 1.0]],
+                [[0.0, 0.1, 1.0, 0.1, 0.0], [0.0, 0.1, 1.0, 0.1, 0.0]],
+                [[0.0, 0.0, 0.1, 0.7, 1.0], [1.0, 0.5, 0.1, 0.0, 0.0]],
+            ]
+        }
+        let fuzzyController2 = new FuzzyController(config);
+        config = {
+            inputU: [-100, -10, 10, 100],
+            outputU: [-10, -5, -0.5, 0.5, 5, 10],
+            fuzzyRules: [
+                [[1.0, 0.7, 0.0, 0.0], [0.0, 0.0, 0.0, 0.1, 0.5, 1.0]],
+                [[0.0, 0.5, 0.5, 0.0], [0.0, 0.0, 0.5, 0.5, 0.0, 0.0]],
+                [[0.0, 0.0, 0.7, 1.0], [1.0, 0.5, 0.1, 0.0, 0.0, 0.0]],
+            ]
+        }
+        let fuzzyController3 = new FuzzyController(config);
+        console.log(`x1 的初始值：${x1}， x2 的初始值：${x2}， x3 的初始值：${x3}`);
+        for (let t = 0; t < 100; t += dt) {
+            v1 = fuzzyController.control(x1, given);
+            x1 += v1 * dt;
+            v2 = fuzzyController2.control(x2, given);
+            x2 += v2 * dt;
+            v3 = fuzzyController3.control(x3, given);
+            x3 += v3 * dt;
+            console.log(`经过时间 ${t} 之后，x1 的值：${x1}， x2 的值：${x2}， x3 的值：${x3}`);
+        }
+    </script>
+</body>
