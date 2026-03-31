@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<!--
+Author: qp91mn64
+License: MIT License
+Created: 2026-03-31
+
+Modified from particle-convergence-with-p5js-1.html
+
+A lot of particles, green or blue
+speed up, slow down, move non-smoothly,
+flicker, with much noise added, when approaching the vertical line
+and reappear from the egde of canvas
+The vertical line follows the mouse
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Particle Convergence with p5.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="simple-fuzzy-controller-3.js"></script>
+</head>
+<body>
+    <script>
+        let x = [];
+        let y = [];
+        let v = [];
+        let particleCount = 1000;
+        let dt;  // Time interval for updating the location x
+        let config;
+        let controllers = [];
+        let lineX;
+        let lineV;
+        function setup() {
+            createCanvas(600, 480);
+            background(0);
+            for (let i = 0; i < particleCount; i++) {
+                x.push(Math.random() * width);
+                y.push(Math.random() * height);
+                v.push(0);
+            }
+            dt = 1;
+            config = {
+                fuzzyRules:[
+                    // This configurations almost eliminate the steady-state error
+                    [[1.0, 0.0, 0.0], [0.0, 0.1, 1.0]],  // IF negative, THEN increase the value
+                    [[0.1, 1.0, 0.1], [0.0, 1.0, 0.0]],  // IF zero, THEN remain the quantity unchanged
+                    [[0.0, 0.0, 1.0], [1.0, 0.1, 0.0]]  // IF positive, THEN decrease the value
+                ]
+            };
+            controllers.push(new FuzzyController(config));
+            config.outputU = [-1, -0.1, 1];
+            fuzzyGradient = new FuzzyController(config);
+            config = {
+                inputU: [-200, -100, 0, 100, 200],
+                outputU: [-1, -0.5, 0, 0.5, 1],
+                fuzzyRules: [
+                    // Hacks:
+                    // a. asymmetric fuzzy rules, so that particles from different sides move differently
+                    // b. larger error, smaller output, so that particles speed up at certain location,
+                    //    move non-smoothly and flicker with noise() added
+                    [[1.0, 0.7, 0.0, 0.0, 0.0], [0.0, 0.0, 0.2, 0.5, 1.0]],  // IF most negative, THEN increase the value fastest
+                    [[0.0, 0.3, 0.5, 0.1, 0.0], [0.0, 0.1, 1.0, 0.1, 0.0]],  // IF zero, THEN remain unchanged
+                    [[0.0, 0.0, 0.1, 1.0, 0.1], [1.0, 0.1, 0.0, 0.0, 0.0]],  // IF less positive, THEN decrease the value fastest
+                    [[0.0, 0.0, 0.0, 0.1, 1.0], [0.0, 1.0, 0.2, 0.0, 0.0]],  // IF most positive, THEN decrease the value more slowly
+                ]
+            }
+            controllers.push(new FuzzyController(config));
+            config = {
+                inputU: [-200, -100, -10, 10, 100, 200],
+                outputU: [-1, -0.2, 0.2, 1],
+                fuzzyRules: [
+                    // Hacks:
+                    // a. asymmetric fuzzy rules, so that particles from different sides move differently
+                    // b. larger error, smaller output, so that particles speed up at certain location,
+                    //    move non-smoothly and flicker with noise() added
+                    [[1.0, 0.7, 0.3, 0.0, 0.0, 0.0], [0.0, 0.2, 0.2, 0.1]],  // IF most negative, THEN increase the value slowly
+                    [[0.1, 0.9, 0.5, 0.2, 0.0, 0.0], [0.0, 0.0, 0.3, 0.9]],  // IF less negative, THEN increase the value fastest
+                    [[0.0, 0.0, 0.2, 0.6, 0.5, 0.2], [0.7, 1.0, 0.0, 0.0]],  // IF less positive, THEN decrease the value fast
+                    [[0.0, 0.0, 0.0, 0.1, 0.6, 1.0], [1.0, 0.3, 0.0, 0.0]],  // IF most positive, THEN decrease the value fastest
+                ]
+            }
+            controllers.push(new FuzzyController(config));
+            lineX = 300;
+        }
+        function draw() {
+            background(0);  // clear the canvas
+            let n = 0;
+            // The vertical line follows the mouse
+            lineV = controllers[0].control(lineX, mouseX);
+            lineX += lineV * dt;
+            if (lineX > width) {lineX = width;} else if (lineX < 0) {lineX = 0;}
+            for (let i = 0; i < particleCount; i++) {
+                let index = Math.floor(y[i] / 160);
+                // add noise to input, particles move less smoothly and shine at certain locations
+                v[i] = controllers[index].control(x[i] - 45 + 90 * noise(i * 0.012 + frameCount / 9.4), lineX);  // control the x coordinate of each circle separately to follow the line
+                x[i] += v[i] * (0.5 + noise(i)) * dt;  // update the location. noise() outputs the same with the same input unless restart
+                // When close enough, particles disappear and reappear at the edge of the canvas with the original y coordinate
+                // Math.random() used, in case they converge into vertical lines and no longer scatter
+                // Besides, when particles gather together, the line in motion don't clear all of them
+                // So that they will be on the other side.
+                if (n < 3 && (abs(x[i] - lineX) < 25 * Math.random() && Math.random() < 0.01 || abs(x[i] - lineX) < 1)) {
+                    n++;
+                    if (x[i] > lineX) {
+                        x[i] = width + 1;
+                    } else {
+                        x[i] = -1;
+                    }
+                }
+            }
+            display();  // visualization
+        }
+        function display() {
+            // The vertical line
+            stroke(0, (- lineV + 1) * 127.5, 223);  // The color changes with speed
+            line(lineX, 0, lineX, height);
+            // All particles
+            noStroke();
+            // The color changes with speed
+            for (let i = 0; i < particleCount; i++) {
+                fill(0, map(v[i], -1, 1, 0, 255), noise(i)*255);  // use noise() for different color
+                circle(x[i], y[i], 5);
+            }
+        }
+    </script>
+</body>
