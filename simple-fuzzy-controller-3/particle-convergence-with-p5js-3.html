@@ -6,11 +6,16 @@ Created: 2026-03-31
 
 Modified from particle-convergence-with-p5js-1.html
 
+Left click to add or remove noise
+Right click to change the defuzzify method
+
 A lot of particles, green or blue
+move towards the vertical line
+reappear from the egde of canvas
 speed up, slow down, move non-smoothly,
-flicker, with much noise added, when approaching the vertical line
-and reappear from the egde of canvas
-The vertical line follows the mouse
+flicker, with much noise added
+move more smoothly and don't flicker without noise
+vertical line follows the mouse
 -->
 <html lang="zh-CN">
 <head>
@@ -25,6 +30,8 @@ The vertical line follows the mouse
         let y = [];
         let v = [];
         let particleCount = 1000;
+        let noiseNum = 0;
+        let noiseAdded = false;
         let dt;  // Time interval for updating the location x
         let config;
         let controllers = [];
@@ -84,6 +91,11 @@ The vertical line follows the mouse
         }
         function draw() {
             background(0);  // clear the canvas
+            if (noiseAdded && noiseNum < 90) {
+                noiseNum++;
+            } else if (!noiseAdded && noiseNum > 0) {
+                noiseNum--;
+            }
             let n = 0;
             // The vertical line follows the mouse
             lineV = controllers[0].control(lineX, mouseX);
@@ -92,7 +104,7 @@ The vertical line follows the mouse
             for (let i = 0; i < particleCount; i++) {
                 let index = Math.floor(y[i] / 160);
                 // add noise to input, particles move less smoothly and shine at certain locations
-                v[i] = controllers[index].control(x[i] - 45 + 90 * noise(i * 0.012 + frameCount / 9.4), lineX);  // control the x coordinate of each circle separately to follow the line
+                v[i] = controllers[index].control(x[i] - noiseNum / 2 + noiseNum * noise(i * 0.012 + frameCount / 9.4), lineX);  // control the x coordinate of each circle separately to follow the line
                 x[i] += v[i] * (0.5 + noise(i)) * dt;  // update the location. noise() outputs the same with the same input unless restart
                 // When close enough, particles disappear and reappear at the edge of the canvas with the original y coordinate
                 // Math.random() used, in case they converge into vertical lines and no longer scatter
@@ -119,6 +131,22 @@ The vertical line follows the mouse
             for (let i = 0; i < particleCount; i++) {
                 fill(0, map(v[i], -1, 1, 0, 255), noise(i)*255);  // use noise() for different color
                 circle(x[i], y[i], 5);
+            }
+        }
+        function mousePressed() {
+            if (mouseButton == LEFT) {
+                // Left click to add or remove noise
+                noiseAdded = !noiseAdded;
+            } else if (mouseButton == RIGHT) {
+                // Right click to change the defuzzify method
+                for (let i = 0; i < controllers.length; i++) {
+                    if (controllers[i].defuzzificationMethod == "centroid") {
+                        controllers[i].defuzzificationMethod = "max";
+                    } else {
+                        controllers[i].defuzzificationMethod = "centroid";
+                    }
+                }
+                return;
             }
         }
     </script>
