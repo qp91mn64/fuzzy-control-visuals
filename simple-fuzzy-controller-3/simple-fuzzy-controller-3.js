@@ -24,6 +24,7 @@
  *     - outputU: An array of the output universe, consisting of at least 3 numbers, in ascending order, relating to how much the controller can output
  *     - fuzzyRules: A 3d array defining all fuzzy rules, each fuzzy rule consisting of a IF part and a THEN part
  *     - method_FR: The method used for calculating fuzzy relation of each rule, now support `Zadeh` or `Mamdani` method, the latter works better.
+ *     - defuzzificationMethod: The method used for defuzzification, now supports `centroid` (centroid method) or `max` (maximum membership method)
  * 
  * Zadeh's method seems to output zero unless the outputU is not symmetry...
  * I supposed the problem of my source code, but the formula was not mistaken.
@@ -47,6 +48,8 @@ class FuzzyController {
         // Method calculating fuzzy relation of each rule.
         // Supported now: "Zadeh" (max(min(IF[i], THEN[j]), (1 - IF[i]))), "Mamdani" (min(IF[i], THEN[j])), the latter works better.
         this.method_FR = config.method_FR || "Mamdani"
+        // Supported method for defuzzification: "centroid" (calculate the centroid, default), or "max" (max membership)
+        this.defuzzificationMethod = config.defuzzificationMethod || "centroid"
         // Calculate the fuzzy relations first.
         this.fuzzyRelations = [];
         this.calculateRs();
@@ -172,21 +175,49 @@ class FuzzyController {
         return result;
     }
     defuzzify(fuzzyResult) {
-        // Defuzzify the fuzzy output using centroid method.
-        // If each value of fuzzyResult is 0, 0 is returned.
-        let num = 0;
-        let den = 0;
+        /*
+        Defuzzify the fuzzy output using centroid method.
+        If each value of fuzzyResult is 0, 0 is returned.
+        Methods supported:
+        - "centroid": Default, calculate the centroid of fuzzyResult.
+        - "max": Maximum membership method, cauculate maximum membership of linguistic variables in outputU.
+                 If there are two or more, return average of them.
+        */
         let result;
-        for (let i = 0; i < fuzzyResult.length; i++) {
-            den += fuzzyResult[i];
-        }
-        if (den == 0) {  // The denominator cannot be zero
-            return 0;
-        } else {
+        if (this.defuzzificationMethod == "max") {
+            result = 0;
+            let a = 0;
+            let whichNumber = 0;
+            let maxPoints = [];
             for (let i = 0; i < fuzzyResult.length; i++) {
-                num += fuzzyResult[i] * this.outputU[i];
+                if (fuzzyResult[i] > a) {
+                    a = fuzzyResult[i];
+                    whichNumber = i;
+                }
             }
-            result = num / den;
+            for (let i = whichNumber; i < fuzzyResult.length; i++) {
+                if (Math.abs(fuzzyResult[i] - a) < 1e-8) {
+                    maxPoints.push(this.outputU[i]);
+                }
+            }
+            for (let i = 0; i < maxPoints.length; i++) {
+                result += maxPoints[i];
+            }
+            result = result / maxPoints.length;
+        } else {
+            let num = 0;
+            let den = 0;
+            for (let i = 0; i < fuzzyResult.length; i++) {
+                den += fuzzyResult[i];
+            }
+            if (den == 0) {  // The denominator cannot be zero
+                return 0;
+            } else {
+                for (let i = 0; i < fuzzyResult.length; i++) {
+                    num += fuzzyResult[i] * this.outputU[i];
+                }
+                result = num / den;
+            }
         }
         return result;
     }
