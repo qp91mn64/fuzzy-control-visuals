@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<!--
+Author: qp91mn64
+License: MIT License
+Created: 2026-04-02
+
+Fuzzy Attractors, modified from fuzzy-attractors-with-p5js-1.html
+
+The cursor repels particles
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Fuzzy Attractors with p5.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="simple-fuzzy-controller-3.js"></script>
+</head>
+<body>
+    <script>
+        let particlesCount = 50;
+        let particlesX = [];
+        let particlesY = [];
+        let particlesVx = [];
+        let particlesVy = [];
+        let attractorsX = [];
+        let attractorsY = [];
+        let attractorsCount = 4;
+        let addParticle = true;
+        let dt = 0.1;
+        let controller;
+        let repeller;
+        let config = {
+            inputU: [-200, -100, -50, 0, 50, 100, 200],
+            outputU: [-20, -10, 0, 10, 20],
+            fuzzyRules: [
+                // IF distant, THEN approach slowly
+                [[1.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0],[0.0, 0.0, 1.0, 0.1, 0.0]],
+                [[0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 1.0],[0.0, 0.1, 1.0, 0.0, 0.0]],
+                // IF not so distant, THEN approach slowly 
+                //[[0.1, 1.0, 0.2, 0.0, 0.0, 0.0, 0.0],[0.0, 0.0, 0.6, 0.4, 0.0]],
+                //[[0.0, 0.0, 0.0, 0.0, 0.2, 1.0, 0.1],[0.0, 0.4, 0.6, 0.0, 0.0]],
+                // IF nearer, THEN approach faster
+                [[0.0, 0.5, 0.7, 0.1, 0.0, 0.0, 0.0],[0.0, 0.0, 0.2, 1.0, 0.3]],
+                [[0.0, 0.0, 0.0, 0.1, 0.7, 0.5, 0.0],[0.3, 1.0, 0.2, 0.0, 0.0]],
+                // IF nearest, THEN approcah fastest...or stand still?
+                //[[0.0, 0.1, 0.5, 0.7, 0.0, 0.0, 0.0],[0.0, 0.0, 0.0, 0.5, 1.0]],
+                //[[0.0, 0.0, 0.0, 0.7, 0.5, 0.1, 0.0],[1.0, 0.5, 0.0, 0.0, 0.0]],
+            ],
+        }
+        function setup() {
+            createCanvas(600, 600);
+            for (let i = 0; i < particlesCount; i++) {
+                particlesX.push(Math.random() * width);
+                particlesY.push(Math.random() * height);
+                particlesVx.push(0);
+                particlesVy.push(0);
+            }
+            controller = new FuzzyController(config);
+            config = {
+                inputU: [-40, -20, -1, 1, 20, 40],
+                outputU: [-20, -10, 0, 10, 20],
+                fuzzyRules: [
+                    // IF nearest, THEN leave fastest
+                    //[[0.0, 0.5, 0.9, 0.0, 0.0, 0.0], [0.7, 0.4, 0.1, 0.0, 0.0]],
+                    [[0.0, 0.0, 0.0, 0.9, 0.1, 0.0], [0.0, 0.0, 0.1, 0.5, 0.7]],
+                    //[[0.0, 0.9, 0.3, 0.0, 0.0, 0.0], [0.4, 1.0, 0.1, 0.0, 0.0]],
+                    //[[0.0, 0.0, 0.0, 0.3, 0.9, 0.0], [0.0, 0.0, 0.1, 1.0, 0.4]],
+                ]
+            }
+            repeller = new FuzzyController(config);
+            for (let i = 0; i < attractorsCount; i++) {
+                attractorsX.push(Math.random() * width);
+                attractorsY.push(Math.random() * height);
+            }
+            colorMode(HSB);
+            noStroke();
+        }
+        function draw() {
+            // Particles move
+            for (let i = 0; i < particlesCount; i++) {
+                let v, dx, dy, d;
+                particlesVx[i] = 0;
+                particlesVy[i] = 0;
+                for (let j = 0; j < attractorsX.length; j++) {
+                    dx = particlesX[i] - attractorsX[j];
+                    dy = particlesY[i] - attractorsY[j];
+                    d = Math.sqrt(dx * dx + dy * dy);
+                    v = controller.control(d, 0);
+                    particlesVx[i] += v * (dx / d);
+                    particlesVy[i] += v * (dy / d);
+                }
+                dx = particlesX[i] - mouseX;
+                dy = particlesY[i] - mouseY;
+                d = Math.sqrt(dx * dx + dy * dy);
+                v = repeller.control(d, 0);
+                particlesVx[i] += v * (dx / d);
+                particlesVy[i] += v * (dy / d);
+            }
+            for (let i = 0; i < particlesCount; i++) {
+                particlesX[i] += particlesVx[i] * dt;
+                particlesY[i] += particlesVy[i] * dt;
+            }
+            // Replace particles with random ones
+            for (let i = 0; i < particlesCount; i++) {
+                for (let j = 0; j < attractorsX.length; j++) {
+                    let dx = particlesX[i] - attractorsX[j];
+                    let dy = particlesY[i] - attractorsY[j];
+                    let d2 = dx * dx + dy * dy;
+                    if (d2 < 100) {
+                        particlesX[i] = Math.random() * width;
+                        particlesY[i] = Math.random() * height;
+                        break;
+                    }
+                }
+            }
+            if (mouseIsPressed && mouseButton == LEFT && addParticle) {
+                // Add a particle
+                particlesCount++;
+                particlesX.push(mouseX+Math.random()*10-5);
+                particlesY.push(mouseY+Math.random()*10-5);
+                particlesVx.push(0);
+                particlesVy.push(0);
+                addParticle = false;
+            }
+            display();
+        }
+        function display() {
+            background(0);
+            noStroke();
+            let vMax = controller.outputU[controller.outputU.length-1];
+            for (let i = 0; i < particlesCount; i++) {
+                fill(10 * noise(i + 0.2) + map(Math.sqrt(particlesVx[i] * particlesVx[i] + particlesVy[i] * particlesVy[i]), 0, vMax, 17, 217) % 360, 70+24*noise(i+0.2), 90+4*noise(i+0.2));
+                circle(particlesX[i], particlesY[i], 5);
+            }
+            noFill();
+            strokeWeight(3);
+            for (let i = 0; i < attractorsX.length; i++) {
+                for (let j = 0; j < 20; j++) {
+                    // XXX: Alpha < 1 works.
+                    // Use fuzzy controller for alpha value to draw fuzzy circle
+                    stroke(192, 80, 100, -controller.control(j * 10, 0) *0.02);
+                    circle(attractorsX[i], attractorsY[i], j);
+                }
+            }
+            // Use fuzzy controller with a Math.sin() for alpha value to draw a shining fuzzy circle at the mouse's location
+            for (let i = 0; i < 40; i++) {
+                // XXX: Alpha < 1 works.
+                stroke(0, 0, 100, map(controller.control(i * 10, 0), -20, 20, 0.21 + 0.034 * Math.sin(frameCount*0.017), -0.21 + 0.034*Math.sin(frameCount*0.017)));
+                circle(mouseX, mouseY, i*0.5);
+            }
+        }
+        function mouseReleased() {
+            // Only one particle added each click
+            addParticle = true;
+        }
+    </script>
+</body>
